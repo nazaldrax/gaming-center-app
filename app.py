@@ -75,11 +75,33 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         session_id INTEGER,
         member_name TEXT,
+        member_id INTEGER,
         device_name TEXT,
         amount REAL,
         payment_status TEXT,
+        payment_date TIMESTAMP,
         transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(session_id) REFERENCES sessions(id)
+        FOREIGN KEY(session_id) REFERENCES sessions(id),
+        FOREIGN KEY(member_id) REFERENCES members(id)
+    )''')
+    
+    # Create Reservations/Bookings Table
+    c.execute('''CREATE TABLE IF NOT EXISTS reservations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        member_id INTEGER,
+        member_name TEXT,
+        device_id INTEGER,
+        device_type TEXT,
+        device_number INTEGER,
+        reservation_date TIMESTAMP,
+        start_time TIMESTAMP,
+        end_time TIMESTAMP,
+        duration_minutes INTEGER,
+        status TEXT DEFAULT 'Confirmed',
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(member_id) REFERENCES members(id),
+        FOREIGN KEY(device_id) REFERENCES devices(id)
     )''')
     
     conn.commit()
@@ -101,6 +123,32 @@ def init_db():
 # Initialize database on startup
 if not os.path.exists(DATABASE):
     init_db()
+else:
+    # Add new tables if they don't exist
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute('''CREATE TABLE IF NOT EXISTS reservations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            member_id INTEGER,
+            member_name TEXT,
+            device_id INTEGER,
+            device_type TEXT,
+            device_number INTEGER,
+            reservation_date TIMESTAMP,
+            start_time TIMESTAMP,
+            end_time TIMESTAMP,
+            duration_minutes INTEGER,
+            status TEXT DEFAULT 'Confirmed',
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(member_id) REFERENCES members(id),
+            FOREIGN KEY(device_id) REFERENCES devices(id)
+        )''')
+        conn.commit()
+        conn.close()
+    except:
+        pass
 
 # ==================== ROUTES ====================
 
@@ -118,6 +166,11 @@ def members():
 def reports():
     """Daily reports and analytics"""
     return render_template('reports.html')
+
+@app.route('/bookings')
+def bookings():
+    """Bookings and reservations page"""
+    return render_template('bookings.html')
 
 # ==================== API ENDPOINTS ====================
 
@@ -172,7 +225,7 @@ def add_member():
         member_id = c.lastrowid
         conn.close()
         
-        return jsonify({'success': True, 'message': 'Member added successfully', 'id': member_id})
+        return jsonify({'success': True, 'message': 'Member added successfully', 'id': member_id, 'name': name})
     except sqlite3.IntegrityError:
         return jsonify({'success': False, 'error': 'Mobile number already exists'})
     except Exception as e:
@@ -226,6 +279,9 @@ def start_session():
         
         if not device_id:
             return jsonify({'success': False, 'error': 'Device not selected'})
+        
+        if not member_name or member_name.strip() == '':
+            return jsonify({'success': False, 'error': 'Please select a registered member or enter guest name'})
         
         conn = get_db()
         c = conn.cursor()
@@ -351,10 +407,10 @@ def extend_session(session_id):
 
 @app.route('/api/sessions/<int:session_id>/end', methods=['POST'])
 def end_session(session_id):
-    """End session and mark payment as completed"""
+    """End session and mark payment status"""
     try:
         data = request.get_json()
-        payment_status = data.get('payment_status', 'Completed')
+        payment_status = data.get('payment_status', 'Pending')  # Can be 'Pending', 'Completed', 'Partial'
         
         conn = get_db()
         c = conn.cursor()
@@ -365,26 +421,111 @@ def end_session(session_id):
         
         # Update session status
         c.execute('''UPDATE sessions 
-                     SET payment_status = ?, end_time = CURRENT_TIMESTAMP 
+                     SET payment_status = ? 
                      WHERE id = ?''',
                   (payment_status, session_id))
         
-        # Update device status
-        c.execute('UPDATE devices SET status = ?, current_member_id = NULL WHERE id = ?',
-                  ('Available', session['device_id']))
+        # Update device status only if payment is completed
+        if payment_status == 'Completed':
+            c.execute('UPDATE devices SET status = ?, current_member_id = NULL WHERE id = ?',
+                      ('Available', session['device_id']))
         
         # Create transaction log
+        payment_date = datetime.now() if payment_status == 'Completed' else None
         c.execute('''INSERT INTO transactions 
-                     (session_id, member_name, device_name, amount, payment_status)
-                     VALUES (?, ?, ?, ?, ?)''',
-                  (session_id, session['member_name'], 
+                     (session_id, member_id, member_name, device_name, amount, payment_status, payment_date)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                  (session_id, session['member_id'], session['member_name'], 
                    f"{session['device_type']} {session['device_number']}", 
-                   session['total_amount'], payment_status))
+                   session['total_amount'], payment_status, payment_date))
         
         conn.commit()
         conn.close()
         
-        return jsonify({'success': True, 'message': 'Session ended successfully'})
+        return jsonify({'success': True, 'message': f'Session payment marked as {payment_status}'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+# ---- RESERVATIONS API ----
+
+@app.route('/api/reservations', methods=['GET'])
+def get_reservations():
+    """Fetch all reservations"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute('''SELECT * FROM reservations 
+                     WHERE status = 'Confirmed' AND reservation_date >= DATE('now')
+                     ORDER BY reservation_date, start_time''')
+        reservations = [dict(row) for row in c.fetchall()]
+        conn.close()
+        return jsonify({'success': True, 'data': reservations})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/reservations', methods=['POST'])
+def create_reservation():
+    """Create new reservation/booking"""
+    try:
+        data = request.get_json()
+        member_id = data.get('member_id')
+        member_name = data.get('member_name')
+        device_id = data.get('device_id')
+        device_type = data.get('device_type')
+        device_number = data.get('device_number')
+        reservation_date = data.get('reservation_date')
+        start_time = data.get('start_time')
+        duration_minutes = int(data.get('duration_minutes', 60))
+        notes = data.get('notes', '')
+        
+        if not all([member_id, device_id, reservation_date, start_time]):
+            return jsonify({'success': False, 'error': 'Missing required fields'})
+        
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Parse times
+        start_datetime = datetime.fromisoformat(f"{reservation_date}T{start_time}")
+        end_datetime = start_datetime + timedelta(minutes=duration_minutes)
+        
+        # Check for conflicts
+        c.execute('''SELECT COUNT(*) as count FROM reservations 
+                     WHERE device_id = ? AND reservation_date = ? 
+                     AND status = 'Confirmed'
+                     AND ((start_time < ? AND end_time > ?)
+                          OR (start_time < ? AND end_time > ?)
+                          OR (start_time >= ? AND end_time <= ?))''',
+                  (device_id, reservation_date, end_datetime, start_datetime,
+                   end_datetime, start_datetime, end_datetime, start_datetime))
+        
+        if c.fetchone()['count'] > 0:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Time slot not available'})
+        
+        c.execute('''INSERT INTO reservations 
+                     (member_id, member_name, device_id, device_type, device_number,
+                      reservation_date, start_time, end_time, duration_minutes, notes)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                  (member_id, member_name, device_id, device_type, device_number,
+                   reservation_date, start_datetime, end_datetime, duration_minutes, notes))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': 'Reservation created successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/reservations/<int:reservation_id>', methods=['DELETE'])
+def cancel_reservation(reservation_id):
+    """Cancel a reservation"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute('UPDATE reservations SET status = ? WHERE id = ?', ('Cancelled', reservation_id))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True, 'message': 'Reservation cancelled'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
@@ -400,40 +541,42 @@ def get_daily_report():
         c = conn.cursor()
         
         # Total Revenue
-        c.execute('''SELECT SUM(total_amount) as total_revenue 
-                     FROM sessions 
+        c.execute('''SELECT SUM(amount) as total_revenue 
+                     FROM transactions 
                      WHERE payment_status = 'Completed' 
-                     AND DATE(end_time) = ?''', (date,))
+                     AND DATE(payment_date) = ?''', (date,))
         total_revenue = c.fetchone()['total_revenue'] or 0
         
         # Total Sessions
         c.execute('''SELECT COUNT(*) as total_sessions 
-                     FROM sessions 
+                     FROM transactions 
                      WHERE payment_status = 'Completed' 
-                     AND DATE(end_time) = ?''', (date,))
+                     AND DATE(payment_date) = ?''', (date,))
         total_sessions = c.fetchone()['total_sessions']
         
         # Most Used Console
-        c.execute('''SELECT device_type, COUNT(*) as count 
-                     FROM sessions 
+        c.execute('''SELECT device_name, COUNT(*) as count 
+                     FROM transactions 
                      WHERE payment_status = 'Completed' 
-                     AND DATE(end_time) = ? 
-                     GROUP BY device_type 
+                     AND DATE(payment_date) = ? 
+                     GROUP BY device_name 
                      ORDER BY count DESC 
                      LIMIT 1''', (date,))
         most_used = c.fetchone()
-        most_used_console = most_used['device_type'] if most_used else 'N/A'
+        most_used_console = most_used['device_name'] if most_used else 'N/A'
         
         # Detailed Transactions
-        c.execute('''SELECT member_name, device_name, duration_minutes, 
-                            start_time, end_time, total_amount 
-                     FROM sessions 
-                     WHERE payment_status = 'Completed' 
-                     AND DATE(end_time) = ? 
-                     ORDER BY end_time DESC''', (date,))
+        c.execute('''SELECT s.member_name, s.device_type, s.device_number, s.duration_minutes, 
+                            s.start_time, s.end_time, t.amount, t.payment_status, t.payment_date
+                     FROM transactions t
+                     JOIN sessions s ON t.session_id = s.id
+                     WHERE t.payment_status = 'Completed' 
+                     AND DATE(t.payment_date) = ? 
+                     ORDER BY t.payment_date DESC''', (date,))
         transactions = []
         for row in c.fetchall():
             trans = dict(row)
+            trans['device_name'] = f"{trans['device_type']} #{trans['device_number']}"
             trans['duration'] = f"{trans['duration_minutes'] // 60}h {trans['duration_minutes'] % 60}m"
             transactions.append(trans)
         
@@ -463,29 +606,31 @@ def get_custom_report():
         c = conn.cursor()
         
         # Total Revenue
-        c.execute('''SELECT SUM(total_amount) as total_revenue 
-                     FROM sessions 
+        c.execute('''SELECT SUM(amount) as total_revenue 
+                     FROM transactions 
                      WHERE payment_status = 'Completed' 
-                     AND DATE(end_time) BETWEEN ? AND ?''', (start_date, end_date))
+                     AND DATE(payment_date) BETWEEN ? AND ?''', (start_date, end_date))
         total_revenue = c.fetchone()['total_revenue'] or 0
         
         # Total Sessions
         c.execute('''SELECT COUNT(*) as total_sessions 
-                     FROM sessions 
+                     FROM transactions 
                      WHERE payment_status = 'Completed' 
-                     AND DATE(end_time) BETWEEN ? AND ?''', (start_date, end_date))
+                     AND DATE(payment_date) BETWEEN ? AND ?''', (start_date, end_date))
         total_sessions = c.fetchone()['total_sessions']
         
         # Detailed Transactions
-        c.execute('''SELECT member_name, device_name, duration_minutes, 
-                            start_time, end_time, total_amount 
-                     FROM sessions 
-                     WHERE payment_status = 'Completed' 
-                     AND DATE(end_time) BETWEEN ? AND ? 
-                     ORDER BY end_time DESC''', (start_date, end_date))
+        c.execute('''SELECT s.member_name, s.device_type, s.device_number, s.duration_minutes, 
+                            s.start_time, s.end_time, t.amount, t.payment_status, t.payment_date
+                     FROM transactions t
+                     JOIN sessions s ON t.session_id = s.id
+                     WHERE t.payment_status = 'Completed' 
+                     AND DATE(t.payment_date) BETWEEN ? AND ? 
+                     ORDER BY t.payment_date DESC''', (start_date, end_date))
         transactions = []
         for row in c.fetchall():
             trans = dict(row)
+            trans['device_name'] = f"{trans['device_type']} #{trans['device_number']}"
             trans['duration'] = f"{trans['duration_minutes'] // 60}h {trans['duration_minutes'] % 60}m"
             transactions.append(trans)
         
