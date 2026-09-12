@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - Gaming Center Management{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <h1 class="mb-4 text-gradient"><i class="fas fa-chart-bar"></i> Daily Revenue Reports & Analytics</h1>
+
+    <!-- Date Filter -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="dateRange" id="todayBtn" value="today" checked>
+                <label class="btn btn-outline-neon-blue" for="todayBtn">
+                    <i class="fas fa-calendar-day me-1"></i>Today
+                </label>
+                
+                <input type="radio" class="btn-check" name="dateRange" id="yesterdayBtn" value="yesterday">
+                <label class="btn btn-outline-neon-blue" for="yesterdayBtn">
+                    <i class="fas fa-calendar me-1"></i>Yesterday
+                </label>
+                
+                <input type="radio" class="btn-check" name="dateRange" id="customBtn" value="custom">
+                <label class="btn btn-outline-neon-blue" for="customBtn">
+                    <i class="fas fa-calendar-alt me-1"></i>Custom
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Date Range (Hidden) -->
+    <div id="customDateRange" style="display: none;" class="row mb-4">
+        <div class="col-md-4">
+            <label class="form-label">From Date</label>
+            <input type="date" class="form-control" id="startDate">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">To Date</label>
+            <input type="date" class="form-control" id="endDate">
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+            <button class="btn btn-neon-green w-100" id="customReportBtn">
+                <i class="fas fa-search me-1"></i>Generate Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="summary-card">
+                <div class="card-icon text-neon-green">
+                    <i class="fas fa-rupee-sign"></i>
+                </div>
+                <div class="card-content">
+                    <p class="card-label">Total Revenue</p>
+                    <h3 class="card-value text-neon-green" id="totalRevenue">₹0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="summary-card">
+                <div class="card-icon text-neon-blue">
+                    <i class="fas fa-gamepad"></i>
+                </div>
+                <div class="card-content">
+                    <p class="card-label">Total Sessions</p>
+                    <h3 class="card-value text-neon-blue" id="totalSessions">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="summary-card">
+                <div class="card-icon text-neon-pink">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="card-content">
+                    <p class="card-label">Most Used</p>
+                    <h3 class="card-value text-neon-pink" id="mostUsed">-</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="card dark-card">
+        <div class="card-header border-neon-blue">
+            <h5 class="mb-0"><i class="fas fa-list me-2"></i>Detailed Transactions</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0">
+                    <thead class="table-header-gaming">
+                        <tr>
+                            <th><i class="fas fa-user me-2"></i>Customer</th>
+                            <th><i class="fas fa-laptop me-2"></i>Device</th>
+                            <th><i class="fas fa-hourglass-half me-2"></i>Duration</th>
+                            <th><i class="fas fa-clock me-2"></i>Start Time</th>
+                            <th><i class="fas fa-stop-circle me-2"></i>End Time</th>
+                            <th class="text-end"><i class="fas fa-rupee-sign me-2"></i>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsBody">
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="fas fa-spinner fa-spin me-2"></i>Loading transactions...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Load report on page load
+window.addEventListener('load', () => {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('startDate').value = today;
+    document.getElementById('endDate').value = today;
+    loadDailyReport(today);
+});
+
+// Date range change handlers
+document.querySelectorAll('input[name="dateRange"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        if (this.value === 'custom') {
+            document.getElementById('customDateRange').style.display = 'block';
+        } else {
+            document.getElementById('customDateRange').style.display = 'none';
+            const today = new Date();
+            let date = today;
+            if (this.value === 'yesterday') {
+                date = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+            }
+            loadDailyReport(date.toISOString().split('T')[0]);
+        }
+    });
+});
+
+document.getElementById('customReportBtn').addEventListener('click', function() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    if (startDate && endDate) {
+        loadCustomReport(startDate, endDate);
+    }
+});
+
+function loadDailyReport(date) {
+    fetch(`/api/reports/daily?date=${date}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                updateReportCards(data.data);
+                updateTransactionsTable(data.data.transactions);
+            }
+        });
+}
+
+function loadCustomReport(startDate, endDate) {
+    fetch(`/api/reports/custom?start_date=${startDate}&end_date=${endDate}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                updateReportCards(data.data);
+                updateTransactionsTable(data.data.transactions);
+            }
+        });
+}
+
+function updateReportCards(data) {
+    document.getElementById('totalRevenue').textContent = '₹' + data.total_revenue.toFixed(2);
+    document.getElementById('totalSessions').textContent = data.total_sessions;
+    document.getElementById('mostUsed').textContent = data.most_used_console;
+}
+
+function updateTransactionsTable(transactions) {
+    const tbody = document.getElementById('transactionsBody');
+    tbody.innerHTML = '';
+    
+    if (transactions.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center text-muted py-4">
+                    <i class="fas fa-inbox me-2"></i>No transactions found
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    transactions.forEach(trans => {
+        const row = document.createElement('tr');
+        const startTime = new Date(trans.start_time).toLocaleString();
+        const endTime = new Date(trans.end_time).toLocaleString();
+        
+        row.innerHTML = `
+            <td><strong>${trans.member_name}</strong></td>
+            <td>${trans.device_name}</td>
+            <td>${trans.duration}</td>
+            <td>${startTime}</td>
+            <td>${endTime}</td>
+            <td class="text-end text-neon-green"><strong>₹${trans.total_amount.toFixed(2)}</strong></td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+</script>
+{% endblock %}

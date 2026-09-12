@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Gaming Center Management{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <h1 class="mb-4 text-gradient"><i class="fas fa-laptop"></i> Real-Time Console Dashboard</h1>
+
+    <!-- Start Session Modal -->
+    <div class="modal fade" id="startSessionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content dark-modal">
+                <div class="modal-header border-neon-blue">
+                    <h5 class="modal-title"><i class="fas fa-play-circle me-2 text-neon-blue"></i>Start New Session</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="sessionForm">
+                        <div class="mb-3">
+                            <label class="form-label">Member/Guest</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="memberSearch" placeholder="Search or enter guest name...">
+                                <button class="btn btn-neon-blue" type="button" id="searchBtn">Search</button>
+                            </div>
+                            <div id="memberList" class="mt-2" style="display:none; max-height: 200px; overflow-y: auto;"></div>
+                            <input type="hidden" id="selectedMemberId" value="">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Device</label>
+                            <select id="deviceSelect" class="form-select" required>
+                                <option value="">Select a device...</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Duration</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="duration" id="duration30" value="30">
+                                <label class="btn btn-outline-neon-blue" for="duration30">30 min</label>
+                                
+                                <input type="radio" class="btn-check" name="duration" id="duration60" value="60" checked>
+                                <label class="btn btn-outline-neon-blue" for="duration60">1 hour</label>
+                                
+                                <input type="radio" class="btn-check" name="duration" id="duration120" value="120">
+                                <label class="btn btn-outline-neon-blue" for="duration120">2 hours</label>
+                            </div>
+                        </div>
+                        <div class="alert alert-info">
+                            <strong>Total Bill:</strong> <span id="billAmount" class="text-neon-green">₹100</span>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-neon-blue">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-neon-green" id="startSessionBtn">Start Session</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Sessions Modal -->
+    <div class="modal fade" id="sessionDetailsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content dark-modal">
+                <div class="modal-header border-neon-green">
+                    <h5 class="modal-title"><i class="fas fa-clock me-2 text-neon-green"></i>Active Session</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="session-details" id="sessionDetails">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                <div class="modal-footer border-neon-green">
+                    <button type="button" class="btn btn-warning" id="extendBtn">Extend +30 min</button>
+                    <button type="button" class="btn btn-danger" id="endSessionBtn">End & Pay</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Devices Grid -->
+    <div class="row" id="devicesContainer">
+        <!-- Populated by JavaScript -->
+    </div>
+</div>
+
+<!-- Alert Notification -->
+<div id="alertToast" class="position-fixed bottom-0 end-0 m-3" role="alert" style="display:none; z-index: 1050;">
+    <div class="alert alert-warning alert-dismissible fade show m-0" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong id="alertMessage">Session expiring soon!</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentSessionId = null;
+const DEVICES_RATE = {
+    'PS5': 100,
+    'Gaming PC': 120,
+    'Driving Console': 150
+};
+
+// Load devices on page load
+window.addEventListener('load', function() {
+    loadDevices();
+    loadActiveSessions();
+    // Refresh every 5 seconds
+    setInterval(loadActiveSessions, 5000);
+});
+
+function loadDevices() {
+    fetch('/api/devices')
+        .then(r => r.json())
+        .then(data => {
+            const container = document.getElementById('devicesContainer');
+            container.innerHTML = '';
+            
+            data.data.forEach(device => {
+                const card = createDeviceCard(device);
+                container.appendChild(card);
+            });
+            
+            // Populate device select
+            const select = document.getElementById('deviceSelect');
+            select.innerHTML = '<option value="">Select a device...</option>';
+            data.data.forEach(device => {
+                if (device.status === 'Available') {
+                    const option = document.createElement('option');
+                    option.value = device.id;
+                    option.textContent = `${device.device_type} #${device.device_number}`;
+                    select.appendChild(option);
+                }
+            });
+        });
+}
+
+function createDeviceCard(device) {
+    const col = document.createElement('div');
+    col.className = 'col-md-4 mb-4';
+    
+    const statusClass = device.status === 'Available' ? 'status-available' : 'status-occupied';
+    const statusIcon = device.status === 'Available' ? 'check-circle' : 'play-circle';
+    const statusColor = device.status === 'Available' ? 'text-neon-green' : 'text-warning';
+    
+    col.innerHTML = `
+        <div class="device-card ${statusClass}">
+            <div class="card-header">
+                <h5>${device.device_type} <span class="badge badge-${device.device_type.toLowerCase()}">#${device.device_number}</span></h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2"><i class="fas fa-${statusIcon} ${statusColor} me-2"></i><strong>${device.status}</strong></p>
+                <p class="mb-2">Rate: <span class="text-neon-green">₹${device.rate_per_hour}/hr</span></p>
+                ${device.member_name ? `<p class="mb-2">User: <strong>${device.member_name}</strong></p>` : ''}
+                ${device.status === 'Available' ? `
+                    <button class="btn btn-neon-green btn-sm w-100" onclick="selectDevice(${device.id})">
+                        <i class="fas fa-play-circle me-1"></i>Start Session
+                    </button>
+                ` : `
+                    <button class="btn btn-neon-blue btn-sm w-100" onclick="viewSession(${device.current_member_id}, ${device.id})">
+                        <i class="fas fa-eye me-1"></i>View Details
+                    </button>
+                `}
+            </div>
+        </div>
+    `;
+    
+    return col;
+}
+
+function selectDevice(deviceId) {
+    document.getElementById('deviceSelect').value = deviceId;
+    document.getElementById('memberSearch').focus();
+    new bootstrap.Modal(document.getElementById('startSessionModal')).show();
+}
+
+// Member search
+document.getElementById('searchBtn').addEventListener('click', function() {
+    const query = document.getElementById('memberSearch').value;
+    if (!query.trim()) {
+        document.getElementById('memberList').style.display = 'none';
+        return;
+    }
+    
+    fetch(`/api/members/search?q=${encodeURIComponent(query)}`)
+        .then(r => r.json())
+        .then(data => {
+            const list = document.getElementById('memberList');
+            list.innerHTML = '';
+            
+            if (data.data.length === 0) {
+                list.innerHTML = '<div class="alert alert-info mb-0">No members found. This will be recorded as a guest.</div>';
+            } else {
+                data.data.forEach(member => {
+                    const item = document.createElement('div');
+                    item.className = 'list-group-item dark-item cursor-pointer';
+                    item.innerHTML = `<strong>${member.name}</strong> - ${member.mobile}`;
+                    item.onclick = () => selectMember(member.id, member.name);
+                    list.appendChild(item);
+                });
+            }
+            list.style.display = 'block';
+        });
+});
+
+function selectMember(memberId, memberName) {
+    document.getElementById('selectedMemberId').value = memberId;
+    document.getElementById('memberSearch').value = memberName;
+    document.getElementById('memberList').style.display = 'none';
+}
+
+// Calculate bill
+document.querySelectorAll('input[name="duration"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const deviceId = document.getElementById('deviceSelect').value;
+        if (!deviceId) return;
+        
+        fetch(`/api/devices/${deviceId}`)
+            .then(r => r.json())
+            .then(data => {
+                const minutes = parseInt(this.value);
+                const rate = data.data.rate_per_hour;
+                const bill = (minutes / 60) * rate;
+                document.getElementById('billAmount').textContent = '₹' + bill.toFixed(2);
+            });
+    });
+});
+
+// Start session
+document.getElementById('startSessionBtn').addEventListener('click', function() {
+    const deviceId = document.getElementById('deviceSelect').value;
+    const memberId = document.getElementById('selectedMemberId').value;
+    const memberName = document.getElementById('memberSearch').value || 'Guest';
+    const duration = document.querySelector('input[name="duration"]:checked').value;
+    
+    if (!deviceId) {
+        alert('Please select a device');
+        return;
+    }
+    
+    fetch('/api/sessions/start', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            device_id: deviceId,
+            member_id: memberId || null,
+            member_name: memberName,
+            duration_minutes: parseInt(duration)
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('Session started successfully!');
+            bootstrap.Modal.getInstance(document.getElementById('startSessionModal')).hide();
+            loadDevices();
+            loadActiveSessions();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+});
+
+function loadActiveSessions() {
+    fetch('/api/sessions/active')
+        .then(r => r.json())
+        .then(data => {
+            data.data.forEach(session => {
+                if (session.alert_5min) {
+                    showAlert(`${session.device_type} #${session.device_number}: ${session.remaining_minutes} minutes remaining!`);
+                }
+            });
+        });
+}
+
+function viewSession(memberId, deviceId) {
+    fetch('/api/sessions/active')
+        .then(r => r.json())
+        .then(data => {
+            const session = data.data.find(s => s.device_id === deviceId);
+            if (session) {
+                currentSessionId = session.id;
+                const details = `
+                    <div class="row">
+                        <div class="col-6"><strong>Member:</strong></div>
+                        <div class="col-6">${session.member_name}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6"><strong>Device:</strong></div>
+                        <div class="col-6">${session.device_type} #${session.device_number}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6"><strong>Elapsed:</strong></div>
+                        <div class="col-6 text-neon-green" id="elapsedTime">${session.elapsed_minutes} min</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6"><strong>Remaining:</strong></div>
+                        <div class="col-6 text-warning" id="remainingTime">${session.remaining_minutes} min</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6"><strong>Total Bill:</strong></div>
+                        <div class="col-6 text-neon-green">₹${session.total_amount.toFixed(2)}</div>
+                    </div>
+                `;
+                document.getElementById('sessionDetails').innerHTML = details;
+                
+                document.getElementById('extendBtn').onclick = () => extendSession(session.id);
+                document.getElementById('endSessionBtn').onclick = () => endSession(session.id);
+                
+                new bootstrap.Modal(document.getElementById('sessionDetailsModal')).show();
+            }
+        });
+}
+
+function extendSession(sessionId) {
+    fetch(`/api/sessions/${sessionId}/extend`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({extra_minutes: 30})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('Session extended by 30 minutes');
+            bootstrap.Modal.getInstance(document.getElementById('sessionDetailsModal')).hide();
+            loadDevices();
+            loadActiveSessions();
+        }
+    });
+}
+
+function endSession(sessionId) {
+    if (confirm('End session and mark as completed?')) {
+        fetch(`/api/sessions/${sessionId}/end`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({payment_status: 'Completed'})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('Session ended. Payment completed!');
+                bootstrap.Modal.getInstance(document.getElementById('sessionDetailsModal')).hide();
+                loadDevices();
+                loadActiveSessions();
+            }
+        });
+    }
+}
+
+function showAlert(message) {
+    const toast = document.getElementById('alertToast');
+    document.getElementById('alertMessage').textContent = message;
+    toast.style.display = 'block';
+    playAlertSound();
+    setTimeout(() => { toast.style.display = 'none'; }, 5000);
+}
+
+function playAlertSound() {
+    const audio = document.getElementById('alertSound');
+    audio.play().catch(() => {});
+}
+</script>
+{% endblock %}
