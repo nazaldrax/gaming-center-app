@@ -1,0 +1,501 @@
+/* ==================== GAMING CENTER DARK THEME CSS ==================== */
+
+:root {
+    --neon-blue: #00d4ff;
+    --neon-green: #00ff41;
+    --neon-pink: #ff006e;
+    --neon-purple: #a000ff;
+    --dark-bg: #0a0e27;
+    --darker-bg: #050810;
+    --card-bg: #1a1f3a;
+    --border-color: #2d3561;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body.dark-theme {
+    background: linear-gradient(135deg, var(--dark-bg) 0%, var(--darker-bg) 100%);
+    color: var(--text-primary);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+}
+
+/* ==================== NAVBAR ==================== */
+
+.gaming-navbar {
+    background: linear-gradient(90deg, rgba(10, 14, 39, 0.95) 0%, rgba(26, 31, 58, 0.95) 100%);
+    border-bottom: 2px solid var(--neon-blue);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+    padding: 1rem 0;
+}
+
+.gaming-navbar .navbar-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.gaming-navbar .nav-link {
+    color: var(--text-primary) !important;
+    margin: 0 0.5rem;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.gaming-navbar .nav-link:hover,
+.gaming-navbar .nav-link.active {
+    color: var(--neon-green) !important;
+    background: rgba(0, 255, 65, 0.1);
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+}
+
+/* ==================== MAIN CONTENT ==================== */
+
+.main-content {
+    padding: 2rem 0;
+    min-height: calc(100vh - 60px);
+}
+
+/* ==================== TEXT STYLES ==================== */
+
+.text-gradient {
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: bold;
+    font-size: 2.5rem;
+}
+
+.text-neon-blue {
+    color: var(--neon-blue) !important;
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.text-neon-green {
+    color: var(--neon-green) !important;
+    text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+}
+
+.text-neon-pink {
+    color: var(--neon-pink) !important;
+    text-shadow: 0 0 10px rgba(255, 0, 110, 0.5);
+}
+
+/* ==================== BUTTONS ==================== */
+
+.btn {
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-neon-blue {
+    background: linear-gradient(135deg, var(--neon-blue) 0%, #0099cc 100%);
+    color: var(--dark-bg) !important;
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+}
+
+.btn-neon-blue:hover {
+    background: linear-gradient(135deg, #00e8ff 0%, #00b8dd 100%);
+    box-shadow: 0 0 25px rgba(0, 212, 255, 0.6);
+    transform: translateY(-2px);
+}
+
+.btn-neon-green {
+    background: linear-gradient(135deg, var(--neon-green) 0%, #00dd38 100%);
+    color: var(--dark-bg) !important;
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.4);
+}
+
+.btn-neon-green:hover {
+    background: linear-gradient(135deg, #00ff50 0%, #00ff2e 100%);
+    box-shadow: 0 0 25px rgba(0, 255, 65, 0.6);
+    transform: translateY(-2px);
+}
+
+.btn-outline-neon-blue {
+    color: var(--neon-blue) !important;
+    border: 2px solid var(--neon-blue) !important;
+    background: transparent;
+}
+
+.btn-outline-neon-blue:hover,
+.btn-check:checked + .btn.btn-outline-neon-blue {
+    background: rgba(0, 212, 255, 0.1);
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+}
+
+/* ==================== CARDS & CONTAINERS ==================== */
+
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    border-color: var(--neon-blue);
+    box-shadow: 0 8px 32px rgba(0, 212, 255, 0.2);
+}
+
+.dark-card {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+}
+
+.dark-modal {
+    background: var(--card-bg) !important;
+    border: 2px solid var(--border-color);
+}
+
+.dark-item {
+    background: rgba(26, 31, 58, 0.5);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.dark-item:hover {
+    background: rgba(0, 212, 255, 0.1);
+    border-color: var(--neon-blue);
+}
+
+/* ==================== DEVICE CARDS ==================== */
+
+.device-card {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.device-card.status-available {
+    border-color: var(--neon-green);
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+}
+
+.device-card.status-occupied {
+    border-color: var(--neon-blue);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+}
+
+.device-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0, 212, 255, 0.4);
+}
+
+.device-card .card-header {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(0, 255, 65, 0.1) 100%);
+    border-bottom: 2px solid var(--border-color);
+    padding: 1rem;
+}
+
+.device-card .card-header h5 {
+    margin: 0;
+    font-weight: bold;
+}
+
+.badge {
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+}
+
+.badge-ps5 {
+    background: linear-gradient(135deg, var(--neon-blue), #0099cc);
+    color: white;
+}
+
+.badge-gaming {
+    background: linear-gradient(135deg, var(--neon-green), #00dd38);
+    color: var(--dark-bg);
+}
+
+.badge-driving {
+    background: linear-gradient(135deg, var(--neon-pink), #ff0055);
+    color: white;
+}
+
+.device-card .card-body {
+    padding: 1.5rem;
+}
+
+.device-card .card-body p {
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+}
+
+/* ==================== SUMMARY CARDS ==================== */
+
+.summary-card {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.summary-card:hover {
+    border-color: var(--neon-blue);
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0, 212, 255, 0.3);
+}
+
+.summary-card .card-icon {
+    font-size: 2.5rem;
+    min-width: 60px;
+    text-align: center;
+}
+
+.summary-card .card-content {
+    flex: 1;
+}
+
+.summary-card .card-label {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.summary-card .card-value {
+    margin: 0.5rem 0 0 0;
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+/* ==================== FORMS ==================== */
+
+.form-control,
+.form-select {
+    background: rgba(26, 31, 58, 0.5);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+    background: rgba(26, 31, 58, 0.8);
+    border-color: var(--neon-blue);
+    color: var(--text-primary);
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+}
+
+.form-control::placeholder {
+    color: var(--text-secondary);
+}
+
+.form-label {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+/* ==================== TABLES ==================== */
+
+.table-dark {
+    color: var(--text-primary);
+}
+
+.table-dark tbody tr {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table-dark tbody tr:hover {
+    background-color: rgba(0, 212, 255, 0.05);
+}
+
+.table-header-gaming {
+    background: linear-gradient(90deg, rgba(0, 212, 255, 0.1) 0%, rgba(0, 255, 65, 0.1) 100%);
+    border-bottom: 2px solid var(--neon-blue);
+    text-transform: uppercase;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+.table-header-gaming th {
+    padding: 1rem;
+    color: var(--neon-blue);
+    border: none;
+}
+
+/* ==================== MODALS ==================== */
+
+.modal-header,
+.modal-footer {
+    border-color: var(--border-color) !important;
+}
+
+.border-neon-blue {
+    border-color: var(--neon-blue) !important;
+}
+
+.border-neon-green {
+    border-color: var(--neon-green) !important;
+}
+
+.btn-close {
+    filter: invert(1);
+}
+
+/* ==================== ALERTS ==================== */
+
+.alert {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: rgba(26, 31, 58, 0.6);
+    color: var(--text-primary);
+}
+
+.alert-info {
+    border-color: var(--neon-blue);
+    background: rgba(0, 212, 255, 0.1);
+    color: var(--neon-blue);
+}
+
+.alert-warning {
+    border-color: var(--neon-pink);
+    background: rgba(255, 0, 110, 0.1);
+    color: #ffaa00;
+}
+
+.alert-success {
+    border-color: var(--neon-green);
+    background: rgba(0, 255, 65, 0.1);
+    color: var(--neon-green);
+}
+
+.alert-danger {
+    border-color: var(--neon-pink);
+    background: rgba(255, 0, 110, 0.1);
+    color: var(--neon-pink);
+}
+
+/* ==================== UTILITY CLASSES ==================== */
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.input-group .btn {
+    border-radius: 0 8px 8px 0;
+}
+
+.input-group .form-control {
+    border-radius: 8px 0 0 8px;
+}
+
+/* ==================== SCROLLBAR STYLING ==================== */
+
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--dark-bg);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--neon-blue);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--neon-green);
+}
+
+/* ==================== RESPONSIVE DESIGN ==================== */
+
+@media (max-width: 768px) {
+    .text-gradient {
+        font-size: 1.8rem;
+    }
+    
+    .summary-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .device-card .card-header h5 {
+        font-size: 1.1rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .container-fluid {
+        padding: 1rem;
+    }
+    
+    .summary-card {
+        padding: 1rem;
+    }
+    
+    .btn {
+        font-size: 0.85rem;
+        padding: 0.5rem 0.75rem;
+    }
+}
+
+/* ==================== ANIMATIONS ==================== */
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 40px rgba(0, 212, 255, 0.8);
+    }
+}
+
+.animated-glow {
+    animation: glow 2s ease-in-out infinite;
+}
+
+.pulse {
+    animation: pulse 2s ease-in-out infinite;
+}
