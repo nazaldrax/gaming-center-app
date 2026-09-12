@@ -1,281 +1,303 @@
-# Gaming Center Management System
+# Gaming Center Management System - Complete Setup Guide
 
-## 🎮 Complete Web Application for Managing a Gaming Center
+## 🎮 Project Overview
 
-A modern, responsive, and user-friendly web application built with **Flask** (Python), **SQLite**, and **Bootstrap 5** for managing gaming consoles, customer sessions, and revenue analytics.
+A modern, full-featured Gaming Center Management System built with **Flask** and **SQLite**, designed to manage consoles, track gaming sessions, handle payments, and provide detailed revenue reports.
 
----
+### ✨ Key Features
 
-## ✨ Features
-
-### 🖥️ **Core System Features**
-
-#### A. Inventory & Device Setup
-- **Multi-device Support:**
-  - PS5 Consoles: 8 units (₹100/hr)
-  - Gaming PCs: 2 units (₹120/hr)
-  - Driving Console: 1 unit (₹150/hr)
-- **Real-time Device Status Dashboard** with visual indicators (Available, Occupied, Expiring Soon)
-- Grid-based responsive layout showing all devices
-
-#### B. Customer & Member Management
-- **Member Registration Form** with fields:
-  - Full Name
-  - Mobile Number (10 digits)
-  - Address
-- **Quick Search** functionality by name or mobile number
-- **Guest/Walk-in Support** for non-registered users
-- **Member List** with creation date and contact details
-
-#### C. Session Allocation & Billing
-- **Session Start** with device and duration selection
-- **Flexible Duration Options:** 30 min, 1 hour, 2 hours (customizable)
-- **Auto-calculated Bill Amount** based on hourly rates
-- **Active Timer Display** showing elapsed and remaining time
-- **Session Extension** with +30 min option
-- **Instant Payment Completion**
-
-#### D. Real-Time Notifications
-- **Visual Alerts** when 5 minutes remaining
-- **Audio Alerts** using Web Audio API
-- **Browser Notifications** with optional permission
-- **Toast Notifications** for all session events
-
-#### E. Daily Reports & Revenue Analytics
-- **Summary Dashboard** with:
-  - Total Revenue Today
-  - Total Sessions Played
-  - Most Used Console Type
-- **Detailed Transaction Table** showing:
-  - Customer Name
-  - Device Name & Number
-  - Session Duration
-  - Start/End Time
-  - Total Amount Paid
-- **Date Range Filtering:**
-  - Today
-  - Yesterday
-  - Custom Date Range
+- **Real-Time Dashboard**: Live console status tracking with visual indicators
+- **Session Management**: Start, extend, and end gaming sessions with automatic billing
+- **Payment Processing**: Track pending and completed payments with transaction logs
+- **Reservations System**: Book consoles in advance with conflict detection
+- **Member Management**: Register members with contact information
+- **Revenue Reports**: Daily and custom date range reports with analytics
+- **Responsive Design**: Works on desktop, tablet, and mobile devices
+- **Dark Gaming Theme**: Modern cyberpunk-inspired UI with neon colors
 
 ---
 
-## 🏗️ Project Structure
+## 📋 System Requirements
 
-```
-gaming_center_app/
-├── app.py                          # Flask backend & database logic
-├── database.db                     # SQLite database (auto-created)
-├── requirements.txt                # Python dependencies
-├── README.md                       # This file
-├── templates/
-│   ├── base.html                  # Main layout with navbar
-│   ├── dashboard.html             # Real-time console grid & timers
-│   ├── members.html               # Member registration & list
-│   └── reports.html               # Revenue reports & analytics
-└── static/
-    ├── css/
-    │   └── style.css              # Dark gaming theme CSS
-    └── js/
-        └── timer.js               # Timer & notification system
-```
+- Python 3.8+
+- Flask 2.0+
+- SQLite3
+- Modern web browser (Chrome, Firefox, Safari, Edge)
 
 ---
 
 ## 🚀 Installation & Setup
 
-### Prerequisites
-- Python 3.8 or higher
-- pip (Python package manager)
-- Modern web browser (Chrome, Firefox, Edge, Safari)
-
-### Step 1: Clone the Repository
+### Step 1: Clone Repository
 ```bash
 git clone https://github.com/nazaldrax/gaming-center-app.git
 cd gaming-center-app
 ```
 
-### Step 2: Create Virtual Environment (Recommended)
+### Step 2: Create Virtual Environment
 ```bash
-# On Windows
+# Windows
 python -m venv venv
 venv\Scripts\activate
 
-# On macOS/Linux
+# Linux/Mac
 python3 -m venv venv
 source venv/bin/activate
 ```
 
 ### Step 3: Install Dependencies
 ```bash
-pip install -r requirements.txt
+pip install flask
 ```
 
-### Step 4: Run the Application
+### Step 4: Run Application
 ```bash
 python app.py
 ```
 
-The application will start on `http://localhost:5000`
+The application will start at `http://localhost:5000`
 
-### Step 5: Access the Application
-Open your web browser and navigate to:
+---
+
+## 📁 Project Structure
+
 ```
-http://localhost:5000
+gaming-center-app/
+├── app.py                          # Main Flask application
+├── database.db                     # SQLite database (created on first run)
+├── templates/
+│   ├── base.html                  # Base template with navigation
+│   ├── dashboard.html             # Console management & sessions
+│   ├── members.html               # Member management page
+│   ├── reports.html               # Revenue analytics
+│   └── bookings.html              # Reservations system
+├── static/
+│   ├── css/
+│   │   └── style.css              # Gaming theme styles
+│   └── js/
+│       └── timer.js               # Session timer functionality
+└── README.md                       # This file
 ```
 
 ---
 
-## 📱 Usage Guide
+## 💾 Database Schema
 
-### Dashboard
-1. **View All Devices** - See real-time status of all consoles
-2. **Start a Session:**
-   - Click "Start Session" on an available device
-   - Search for and select a registered member (or enter guest name)
-   - Select session duration
-   - Confirm total bill amount
-   - Click "Start Session"
-3. **Monitor Active Sessions** - View elapsed/remaining time with live countdown
-4. **Extend Session** - Add extra time during active play
-5. **End Session** - Mark as completed and trigger payment
-
-### Members Management
-1. **Register New Member:**
-   - Click "Add New Member" button
-   - Fill in name, mobile number, and address
-   - Save to database
-2. **Search Members** - Find existing members by name or phone
-3. **View Member History** - Check past sessions (coming soon)
-
-### Reports & Analytics
-1. **Daily Reports:**
-   - Click "Reports" in navigation
-   - Select "Today" or "Yesterday"
-   - View summary cards and transaction details
-2. **Custom Date Range:**
-   - Select "Custom"
-   - Pick start and end dates
-   - Generate detailed report
-3. **Export Data** - Transaction data can be copied for external use
-
----
-
-## 🎨 Design & UI
-
-### Dark Gaming Theme
-- **Modern Neon Color Scheme:**
-  - Primary: Neon Blue (#00d4ff)
-  - Secondary: Neon Green (#00ff41)
-  - Accent: Neon Pink (#ff006e)
-- **Responsive Grid Layout** - Works on desktop, tablet, and mobile
-- **Smooth Animations** - Hover effects and transitions
-- **Glass Morphism Cards** - Modern card design with shadows
-- **Accessibility** - High contrast, readable fonts, ARIA labels
-
----
-
-## 🛠️ Technical Stack
-
-### Backend
-- **Framework:** Flask 3.0.0
-- **Database:** SQLite3 (built-in Python module)
-- **Server:** Werkzeug 3.0.1
-
-### Frontend
-- **HTML5** - Semantic markup
-- **CSS3** - Custom dark theme with animations
-- **Bootstrap 5** - Responsive grid system
-- **Vanilla JavaScript** - Timer system, notifications, API calls
-
-### APIs Provided
-- RESTful endpoints for all CRUD operations
-- JSON request/response format
-- Session management
-- Real-time data fetching
-
----
-
-## 📊 Database Schema
-
-### Tables
-
-**members**
+### Members Table
 ```sql
-id (INTEGER, PRIMARY KEY)
-name (TEXT)
-mobile (TEXT, UNIQUE)
-address (TEXT)
-created_at (TIMESTAMP)
+CREATE TABLE members (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    mobile TEXT NOT NULL UNIQUE,
+    address TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
 ```
 
-**devices**
+### Devices Table
 ```sql
-id (INTEGER, PRIMARY KEY)
-device_type (TEXT)
-device_number (INTEGER)
-status (TEXT: Available/Occupied)
-current_member_id (INTEGER, FOREIGN KEY)
-rate_per_hour (REAL)
+CREATE TABLE devices (
+    id INTEGER PRIMARY KEY,
+    device_type TEXT NOT NULL,
+    device_number INTEGER NOT NULL,
+    status TEXT DEFAULT 'Available',
+    current_member_id INTEGER,
+    rate_per_hour REAL NOT NULL,
+    UNIQUE(device_type, device_number)
+)
 ```
 
-**sessions**
+### Sessions Table
 ```sql
-id (INTEGER, PRIMARY KEY)
-member_id (INTEGER, FOREIGN KEY)
-member_name (TEXT)
-device_id (INTEGER, FOREIGN KEY)
-device_type (TEXT)
-device_number (INTEGER)
-start_time (TIMESTAMP)
-end_time (TIMESTAMP)
-duration_minutes (INTEGER)
-rate_per_hour (REAL)
-total_amount (REAL)
-payment_status (TEXT: Pending/Completed)
-created_at (TIMESTAMP)
+CREATE TABLE sessions (
+    id INTEGER PRIMARY KEY,
+    member_id INTEGER,
+    member_name TEXT,
+    device_id INTEGER,
+    device_type TEXT,
+    device_number INTEGER,
+    start_time TIMESTAMP,
+    end_time TIMESTAMP,
+    duration_minutes INTEGER,
+    rate_per_hour REAL,
+    total_amount REAL,
+    payment_status TEXT DEFAULT 'Pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
 ```
 
-**transactions**
+### Transactions Table
 ```sql
-id (INTEGER, PRIMARY KEY)
-session_id (INTEGER, FOREIGN KEY)
-member_name (TEXT)
-device_name (TEXT)
-amount (REAL)
-payment_status (TEXT)
-transaction_date (TIMESTAMP)
+CREATE TABLE transactions (
+    id INTEGER PRIMARY KEY,
+    session_id INTEGER,
+    member_id INTEGER,
+    member_name TEXT,
+    device_name TEXT,
+    amount REAL,
+    payment_status TEXT,
+    payment_date TIMESTAMP,
+    transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+```
+
+### Reservations Table
+```sql
+CREATE TABLE reservations (
+    id INTEGER PRIMARY KEY,
+    member_id INTEGER,
+    member_name TEXT,
+    device_id INTEGER,
+    device_type TEXT,
+    device_number INTEGER,
+    reservation_date TIMESTAMP,
+    start_time TIMESTAMP,
+    end_time TIMESTAMP,
+    duration_minutes INTEGER,
+    status TEXT DEFAULT 'Confirmed',
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
 ```
 
 ---
 
-## 🔗 API Endpoints
+## 🎯 Default Devices & Rates
 
-### Members
+| Console | Quantity | Rate/Hour |
+|---------|----------|-----------|
+| PS5 | 8 | ₹100 |
+| Gaming PC | 2 | ₹120 |
+| Driving Console | 1 | ₹150 |
+
+---
+
+## 📡 API Endpoints
+
+### Member Management
 - `GET /api/members` - Get all members
-- `GET /api/members/search?q=query` - Search members
 - `POST /api/members` - Add new member
+- `GET /api/members/search?q=query` - Search members
 
-### Devices
-- `GET /api/devices` - Get all devices with status
-- `GET /api/devices/<id>` - Get specific device
+### Device Management
+- `GET /api/devices` - Get all devices
+- `GET /api/devices/<id>` - Get device details
 
-### Sessions
+### Session Management
 - `POST /api/sessions/start` - Start new session
 - `GET /api/sessions/active` - Get active sessions
 - `GET /api/sessions/<id>` - Get session details
 - `POST /api/sessions/<id>/extend` - Extend session
-- `POST /api/sessions/<id>/end` - End session
+- `POST /api/sessions/<id>/end` - End session and record payment
+
+### Reservations
+- `GET /api/reservations` - Get upcoming reservations
+- `POST /api/reservations` - Create booking
+- `DELETE /api/reservations/<id>` - Cancel reservation
 
 ### Reports
-- `GET /api/reports/daily?date=YYYY-MM-DD` - Daily report
-- `GET /api/reports/custom?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD` - Custom report
+- `GET /api/reports/daily?date=YYYY-MM-DD` - Daily revenue report
+- `GET /api/reports/custom?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD` - Custom range report
+
+---
+
+## 🎮 How to Use
+
+### Dashboard
+
+1. **View Console Status**: All consoles are displayed with real-time status (Available/Occupied)
+2. **Start Session**:
+   - Click "Start Session" on an available console
+   - Select a registered member from dropdown
+   - Choose duration (30 min, 1 hour, 2 hours)
+   - Review bill amount and click "Start Session"
+3. **Monitor Active Sessions**:
+   - Active sessions auto-refresh every 5 seconds
+   - View elapsed time, remaining time, and total bill
+   - 5-minute warning alert triggers automatically
+4. **End Session**:
+   - Click "End & Pay" to close the session
+   - Choose payment status: Pending, Completed, or Partial
+   - Device automatically becomes available when payment is completed
+
+### Members Page
+
+1. **Add Member**:
+   - Enter name, mobile number, and address
+   - Mobile number must be unique
+2. **Search Members**:
+   - Quick search by name or mobile
+   - View all registered members
+3. **View Details**:
+   - Check member profile and contact info
+
+### Bookings Page
+
+1. **Create Reservation**:
+   - Select member and device
+   - Choose date and time
+   - Set duration and add notes
+   - Click "Create Booking"
+2. **View Reservations**:
+   - See all upcoming bookings in table
+   - Cancel bookings if needed
+3. **Conflict Detection**:
+   - System automatically prevents double-booking
+   - Shows time slot availability
+
+### Reports Page
+
+1. **Daily Report**:
+   - Select date to view that day's revenue
+   - See total revenue, session count, and most used console
+   - View detailed transaction list
+2. **Custom Report**:
+   - Choose start and end dates
+   - Get aggregated data for period
+   - Export-ready transaction details
+
+---
+
+## 💳 Payment Workflow
+
+### Session End Options
+
+1. **End Session (Pending)**
+   - Session ends but device remains unavailable
+   - Payment marked as "Pending"
+   - Device can be freed later after payment
+   - Useful for installment payments or cash collection
+
+2. **Payment Completed**
+   - Session ends and device becomes available immediately
+   - Payment marked as "Completed"
+   - Transaction logged with payment date
+   - Amount appears in daily/custom reports
+
+3. **Partial Payment**
+   - Session ends and device becomes available
+   - Payment marked as "Partial"
+   - Partial amount recorded in transactions
+   - Outstanding amount tracked separately
+
+---
+
+## 🔒 Data Validation
+
+- **Member Names**: Required, validated for empty input
+- **Mobile Numbers**: Required, must be unique, validated for duplicates
+- **Device Selection**: Only available devices can be selected
+- **Session Duration**: Minimum 30 minutes, maximum 180 minutes
+- **Reservation Dates**: Cannot book in the past
+- **Time Slot Conflicts**: Automatic detection and prevention
 
 ---
 
 ## ⚙️ Configuration
 
-### Device Rates
-To modify device types or hourly rates, edit the `DEVICES` dictionary in `app.py`:
+### Device Setup (in app.py)
+
+To add or modify devices, edit the `DEVICES` dictionary:
 
 ```python
 DEVICES = {
@@ -285,97 +307,84 @@ DEVICES = {
 }
 ```
 
-### Alert Settings
-To change alert threshold, modify in `static/js/timer.js`:
+### Database Location
 
-```javascript
-const ALERT_THRESHOLD = 5 * 60; // 5 minutes in seconds
+Default: `database.db` in project root
+
+To change, modify in `app.py`:
+```python
+DATABASE = 'path/to/database.db'
+```
+
+### Server Settings
+
+Default port: `5000`
+
+To change, modify last line of `app.py`:
+```python
+app.run(debug=True, host='0.0.0.0', port=YOUR_PORT)
 ```
 
 ---
 
 ## 🐛 Troubleshooting
 
-### Application won't start
-- Ensure Python 3.8+ is installed: `python --version`
-- Check Flask is installed: `pip list | grep Flask`
-- Port 5000 might be in use: `python app.py` (Flask will suggest alternative)
+### Issue: "Address already in use"
+**Solution**: Change port in app.py or kill process on port 5000
 
-### Database errors
-- Delete `database.db` to reset (will be auto-created)
-- Ensure write permissions in application directory
+### Issue: Database locked error
+**Solution**: Close all database connections and restart Flask
 
-### Timer not working
-- Check browser console for JavaScript errors
-- Ensure JavaScript is enabled in browser
-- Clear browser cache and reload
+### Issue: Members not loading
+**Solution**: Ensure database.db exists and is not corrupted. Delete it and restart to recreate.
 
-### Notifications not showing
-- Grant notification permission when prompted
-- Check browser notification settings
-- Some browsers require HTTPS for notifications
+### Issue: Sessions not updating in real-time
+**Solution**: Refresh browser or check browser console for errors
 
 ---
 
-## 📝 Future Enhancements
+## 🔐 Security Notes
 
-- [ ] User authentication & admin roles
-- [ ] Payment gateway integration
-- [ ] SMS notifications to members
-- [ ] Email reports
-- [ ] Advanced analytics with charts
-- [ ] Member loyalty program
+- Store in secure environment (not production)
+- Use HTTPS in production deployment
+- Add authentication/authorization layer for multi-user
+- Regularly backup database
+- Validate all user inputs
+
+---
+
+## 📊 Future Enhancements
+
+- [ ] User authentication and roles
+- [ ] Online payment integration (Razorpay, Stripe)
+- [ ] SMS/Email notifications
+- [ ] Advance booking with deposits
+- [ ] Loyalty programs
+- [ ] Staff management
+- [ ] Inventory management
+- [ ] Analytics dashboard with charts
+- [ ] Mobile app
 - [ ] Multi-location support
-- [ ] Mobile app (React Native/Flutter)
-- [ ] Dark/Light mode toggle
-- [ ] Backup & restore functionality
 
 ---
 
-## 📄 License
+## 🤝 Support & Contact
 
-This project is provided as-is for educational and commercial use.
-
----
-
-## 👨‍💻 Author
-
-**Your Gaming Center Management Solution**
-- GitHub: [nazaldrax](https://github.com/nazaldrax)
-- Repository: [gaming-center-app](https://github.com/nazaldrax/gaming-center-app)
+For issues, suggestions, or contributions:
+- GitHub Issues: [Create an issue](https://github.com/nazaldrax/gaming-center-app/issues)
+- Email: nazaldrax@example.com
 
 ---
 
-## 💬 Support
+## 📝 License
 
-For issues, questions, or suggestions:
-1. Check existing GitHub issues
-2. Create a new issue with detailed description
-3. Include error messages and screenshots
+This project is open source and available for personal and commercial use.
 
 ---
 
-## 🎯 Quick Start Summary
+## 🎊 Happy Gaming!
 
-```bash
-# 1. Clone
-git clone https://github.com/nazaldrax/gaming-center-app.git
-cd gaming-center-app
+Manage your gaming center efficiently with this modern, feature-rich management system!
 
-# 2. Setup virtual environment
-python -m venv venv
-source venv/bin/activate  # or venv\Scripts\activate on Windows
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Run application
-python app.py
-
-# 5. Open browser
-http://localhost:5000
-```
-
----
-
-**Happy Gaming! 🎮✨**
+**Last Updated**: September 12, 2026
+**Version**: 1.0.0
