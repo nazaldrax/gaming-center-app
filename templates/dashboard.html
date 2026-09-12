@@ -17,13 +17,13 @@
                 <div class="modal-body">
                     <form id="sessionForm">
                         <div class="mb-3">
-                            <label class="form-label">Member/Guest</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="memberSearch" placeholder="Search or enter guest name...">
-                                <button class="btn btn-neon-blue" type="button" id="searchBtn">Search</button>
-                            </div>
-                            <div id="memberList" class="mt-2" style="display:none; max-height: 200px; overflow-y: auto;"></div>
-                            <input type="hidden" id="selectedMemberId" value="">
+                            <label class="form-label">Member</label>
+                            <select id="memberSelect" class="form-select" required>
+                                <option value="">-- Select Registered Member --</option>
+                            </select>
+                            <small class="text-muted mt-2 d-block">
+                                <i class="fas fa-info-circle"></i> Only registered members can be selected for console assignment
+                            </small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Device</label>
@@ -71,8 +71,11 @@
                     </div>
                 </div>
                 <div class="modal-footer border-neon-green">
-                    <button type="button" class="btn btn-warning" id="extendBtn">Extend +30 min</button>
-                    <button type="button" class="btn btn-danger" id="endSessionBtn">End & Pay</button>
+                    <button type="button" class="btn btn-warning" id="extendBtn"><i class="fas fa-plus me-1"></i>Extend +30 min</button>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-danger" id="endSessionBtn"><i class="fas fa-stop-circle me-1"></i>End Session</button>
+                        <button type="button" class="btn btn-success" id="paymentCompleteBtn"><i class="fas fa-check-circle me-1"></i>Payment Completed</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -105,11 +108,27 @@ const DEVICES_RATE = {
 
 // Load devices on page load
 window.addEventListener('load', function() {
+    loadMembers();
     loadDevices();
     loadActiveSessions();
     // Refresh every 5 seconds
     setInterval(loadActiveSessions, 5000);
 });
+
+function loadMembers() {
+    fetch('/api/members')
+        .then(r => r.json())
+        .then(data => {
+            const select = document.getElementById('memberSelect');
+            select.innerHTML = '<option value="">-- Select Registered Member --</option>';
+            data.data.forEach(member => {
+                const option = document.createElement('option');
+                option.value = member.id;
+                option.textContent = `${member.name} (${member.mobile})`;
+                select.appendChild(option);
+            });
+        });
+}
 
 function loadDevices() {
     fetch('/api/devices')
@@ -159,7 +178,7 @@ function createDeviceCard(device) {
                         <i class="fas fa-play-circle me-1"></i>Start Session
                     </button>
                 ` : `
-                    <button class="btn btn-neon-blue btn-sm w-100" onclick="viewSession(${device.current_member_id}, ${device.id})">
+                    <button class="btn btn-neon-blue btn-sm w-100" onclick="viewSession(${device.id})">
                         <i class="fas fa-eye me-1"></i>View Details
                     </button>
                 `}
@@ -172,80 +191,56 @@ function createDeviceCard(device) {
 
 function selectDevice(deviceId) {
     document.getElementById('deviceSelect').value = deviceId;
-    document.getElementById('memberSearch').focus();
+    document.getElementById('memberSelect').focus();
     new bootstrap.Modal(document.getElementById('startSessionModal')).show();
 }
 
-// Member search
-document.getElementById('searchBtn').addEventListener('click', function() {
-    const query = document.getElementById('memberSearch').value;
-    if (!query.trim()) {
-        document.getElementById('memberList').style.display = 'none';
-        return;
-    }
+// Calculate bill
+document.getElementById('deviceSelect').addEventListener('change', calculateBill);
+document.querySelectorAll('input[name="duration"]').forEach(radio => {
+    radio.addEventListener('change', calculateBill);
+});
+
+function calculateBill() {
+    const deviceId = document.getElementById('deviceSelect').value;
+    if (!deviceId) return;
     
-    fetch(`/api/members/search?q=${encodeURIComponent(query)}`)
+    fetch(`/api/devices/${deviceId}`)
         .then(r => r.json())
         .then(data => {
-            const list = document.getElementById('memberList');
-            list.innerHTML = '';
-            
-            if (data.data.length === 0) {
-                list.innerHTML = '<div class="alert alert-info mb-0">No members found. This will be recorded as a guest.</div>';
-            } else {
-                data.data.forEach(member => {
-                    const item = document.createElement('div');
-                    item.className = 'list-group-item dark-item cursor-pointer';
-                    item.innerHTML = `<strong>${member.name}</strong> - ${member.mobile}`;
-                    item.onclick = () => selectMember(member.id, member.name);
-                    list.appendChild(item);
-                });
-            }
-            list.style.display = 'block';
+            const minutes = parseInt(document.querySelector('input[name="duration"]:checked').value);
+            const rate = data.data.rate_per_hour;
+            const bill = (minutes / 60) * rate;
+            document.getElementById('billAmount').textContent = '₹' + bill.toFixed(2);
         });
-});
-
-function selectMember(memberId, memberName) {
-    document.getElementById('selectedMemberId').value = memberId;
-    document.getElementById('memberSearch').value = memberName;
-    document.getElementById('memberList').style.display = 'none';
 }
-
-// Calculate bill
-document.querySelectorAll('input[name="duration"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-        const deviceId = document.getElementById('deviceSelect').value;
-        if (!deviceId) return;
-        
-        fetch(`/api/devices/${deviceId}`)
-            .then(r => r.json())
-            .then(data => {
-                const minutes = parseInt(this.value);
-                const rate = data.data.rate_per_hour;
-                const bill = (minutes / 60) * rate;
-                document.getElementById('billAmount').textContent = '₹' + bill.toFixed(2);
-            });
-    });
-});
 
 // Start session
 document.getElementById('startSessionBtn').addEventListener('click', function() {
+    const memberId = document.getElementById('memberSelect').value;
     const deviceId = document.getElementById('deviceSelect').value;
-    const memberId = document.getElementById('selectedMemberId').value;
-    const memberName = document.getElementById('memberSearch').value || 'Guest';
     const duration = document.querySelector('input[name="duration"]:checked').value;
+    
+    if (!memberId) {
+        alert('Please select a registered member');
+        return;
+    }
     
     if (!deviceId) {
         alert('Please select a device');
         return;
     }
     
+    // Get member name from select
+    const memberSelect = document.getElementById('memberSelect');
+    const memberName = memberSelect.options[memberSelect.selectedIndex].text.split('(')[0].trim();
+    
     fetch('/api/sessions/start', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
-            device_id: deviceId,
-            member_id: memberId || null,
+            device_id: parseInt(deviceId),
+            member_id: parseInt(memberId),
             member_name: memberName,
             duration_minutes: parseInt(duration)
         })
@@ -254,6 +249,7 @@ document.getElementById('startSessionBtn').addEventListener('click', function() 
     .then(data => {
         if (data.success) {
             alert('Session started successfully!');
+            document.getElementById('sessionForm').reset();
             bootstrap.Modal.getInstance(document.getElementById('startSessionModal')).hide();
             loadDevices();
             loadActiveSessions();
@@ -275,7 +271,7 @@ function loadActiveSessions() {
         });
 }
 
-function viewSession(memberId, deviceId) {
+function viewSession(deviceId) {
     fetch('/api/sessions/active')
         .then(r => r.json())
         .then(data => {
@@ -283,31 +279,37 @@ function viewSession(memberId, deviceId) {
             if (session) {
                 currentSessionId = session.id;
                 const details = `
-                    <div class="row">
-                        <div class="col-6"><strong>Member:</strong></div>
-                        <div class="col-6">${session.member_name}</div>
-                    </div>
-                    <div class="row">
-                        <div class="col-6"><strong>Device:</strong></div>
-                        <div class="col-6">${session.device_type} #${session.device_number}</div>
-                    </div>
-                    <div class="row">
-                        <div class="col-6"><strong>Elapsed:</strong></div>
-                        <div class="col-6 text-neon-green" id="elapsedTime">${session.elapsed_minutes} min</div>
-                    </div>
-                    <div class="row">
-                        <div class="col-6"><strong>Remaining:</strong></div>
-                        <div class="col-6 text-warning" id="remainingTime">${session.remaining_minutes} min</div>
-                    </div>
-                    <div class="row">
-                        <div class="col-6"><strong>Total Bill:</strong></div>
-                        <div class="col-6 text-neon-green">₹${session.total_amount.toFixed(2)}</div>
+                    <div class="session-info">
+                        <div class="row mb-3">
+                            <div class="col-6"><strong>Member:</strong></div>
+                            <div class="col-6">${session.member_name}</div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6"><strong>Device:</strong></div>
+                            <div class="col-6">${session.device_type} #${session.device_number}</div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6"><strong>Elapsed Time:</strong></div>
+                            <div class="col-6 text-neon-green">${session.elapsed_minutes} minutes</div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6"><strong>Remaining Time:</strong></div>
+                            <div class="col-6 text-warning">${session.remaining_minutes} minutes</div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6"><strong>Total Bill:</strong></div>
+                            <div class="col-6 text-neon-green"><h4>₹${session.total_amount.toFixed(2)}</h4></div>
+                        </div>
+                        <div class="alert alert-info mt-3">
+                            <strong>Session Status:</strong> ${session.payment_status}
+                        </div>
                     </div>
                 `;
                 document.getElementById('sessionDetails').innerHTML = details;
                 
                 document.getElementById('extendBtn').onclick = () => extendSession(session.id);
                 document.getElementById('endSessionBtn').onclick = () => endSession(session.id);
+                document.getElementById('paymentCompleteBtn').onclick = () => completePayment(session.id);
                 
                 new bootstrap.Modal(document.getElementById('sessionDetailsModal')).show();
             }
@@ -323,7 +325,7 @@ function extendSession(sessionId) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            alert('Session extended by 30 minutes');
+            alert('Session extended by 30 minutes!');
             bootstrap.Modal.getInstance(document.getElementById('sessionDetailsModal')).hide();
             loadDevices();
             loadActiveSessions();
@@ -332,7 +334,26 @@ function extendSession(sessionId) {
 }
 
 function endSession(sessionId) {
-    if (confirm('End session and mark as completed?')) {
+    if (confirm('Mark session as ended?')) {
+        fetch(`/api/sessions/${sessionId}/end`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({payment_status: 'Pending'})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('Session ended. Waiting for payment...');
+                bootstrap.Modal.getInstance(document.getElementById('sessionDetailsModal')).hide();
+                loadDevices();
+                loadActiveSessions();
+            }
+        });
+    }
+}
+
+function completePayment(sessionId) {
+    if (confirm('Confirm payment received?')) {
         fetch(`/api/sessions/${sessionId}/end`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -341,7 +362,8 @@ function endSession(sessionId) {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                alert('Session ended. Payment completed!');
+                alert('✓ Payment completed successfully!');
+                showNotification('Payment completed and added to reports', 'success');
                 bootstrap.Modal.getInstance(document.getElementById('sessionDetailsModal')).hide();
                 loadDevices();
                 loadActiveSessions();
@@ -356,6 +378,18 @@ function showAlert(message) {
     toast.style.display = 'block';
     playAlertSound();
     setTimeout(() => { toast.style.display = 'none'; }, 5000);
+}
+
+function showNotification(message, type = 'info') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'bottom: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        <strong>${message}</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    setTimeout(() => alertDiv.remove(), 3000);
 }
 
 function playAlertSound() {
