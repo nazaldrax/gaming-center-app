@@ -2,9 +2,88 @@
 
 {% block title %}Dashboard - Gaming Center Management{% endblock %}
 
+{% block extra_css %}
+<style>
+    .session-card {
+        background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(0, 255, 65, 0.1) 100%);
+        border: 2px solid #00d4ff;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+    .session-card:hover {
+        border-color: #00ff41;
+        box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+    }
+    .timer-display {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #00ff41;
+        font-family: 'Courier New', monospace;
+        text-shadow: 0 0 10px #00ff41;
+    }
+    .progress-bar-animated {
+        background: linear-gradient(90deg, #00d4ff, #00ff41, #ff006e);
+    }
+    .btn-action {
+        margin-top: 10px;
+        margin-right: 5px;
+    }
+    .status-badge {
+        font-size: 0.9rem;
+        padding: 8px 16px;
+        border-radius: 20px;
+    }
+    .status-occupied {
+        background: #ff006e;
+        color: white;
+    }
+    .status-available {
+        background: #00ff41;
+        color: #000;
+    }
+    .status-pending {
+        background: #ffd60a;
+        color: #000;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="py-4">
-    <h1 class="mb-4 text-gradient"><i class="fas fa-laptop"></i> Real-Time Console Dashboard</h1>
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="text-gradient mb-0"><i class="fas fa-laptop"></i> Real-Time Console Dashboard</h1>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-neon-blue" data-bs-toggle="modal" data-bs-target="#startSessionModal">
+                <i class="fas fa-play-circle me-2"></i>Start New Session
+            </button>
+        </div>
+    </div>
+
+    <!-- Active Sessions Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="text-neon-green mb-3"><i class="fas fa-users-playing"></i> Active Sessions</h3>
+            <div id="activeSessions" class="">
+                <div class="alert alert-info text-center py-4">
+                    <i class="fas fa-info-circle me-2"></i> No active sessions. Start one to begin!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Console Grid Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="text-neon-blue mb-3"><i class="fas fa-gamepad"></i> Console Status</h3>
+        </div>
+    </div>
+    <div id="deviceGrid" class="row g-3">
+        <!-- Devices will be loaded here -->
+    </div>
 
     <!-- Start Session Modal -->
     <div class="modal fade" id="startSessionModal" tabindex="-1">
@@ -17,22 +96,22 @@
                 <div class="modal-body">
                     <form id="sessionForm">
                         <div class="mb-3">
-                            <label class="form-label">Member</label>
+                            <label class="form-label"><i class="fas fa-user me-2 text-neon-green"></i>Member</label>
                             <select id="memberSelect" class="form-select" required>
                                 <option value="">-- Select Registered Member --</option>
                             </select>
                             <small class="text-muted mt-2 d-block">
-                                <i class="fas fa-info-circle"></i> Only registered members can be selected for console assignment
+                                <i class="fas fa-info-circle"></i> Only registered members can start sessions
                             </small>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Device</label>
+                            <label class="form-label"><i class="fas fa-joystick me-2 text-neon-green"></i>Device</label>
                             <select id="deviceSelect" class="form-select" required>
                                 <option value="">Select a device...</option>
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Duration</label>
+                            <label class="form-label"><i class="fas fa-clock me-2 text-neon-green"></i>Duration</label>
                             <div class="btn-group w-100" role="group">
                                 <input type="radio" class="btn-check" name="duration" id="duration30" value="30">
                                 <label class="btn btn-outline-neon-blue" for="duration30">30 min</label>
@@ -44,357 +123,288 @@
                                 <label class="btn btn-outline-neon-blue" for="duration120">2 hours</label>
                             </div>
                         </div>
-                        <div class="alert alert-info">
-                            <strong>Total Bill:</strong> <span id="billAmount" class="text-neon-green">₹100</span>
+                        <div class="alert alert-info border-neon-blue">
+                            <strong><i class="fas fa-money-bill me-2"></i>Total Bill:</strong> 
+                            <span id="billAmount" class="text-neon-green">₹100</span>
                         </div>
+                        <button type="submit" class="btn btn-neon-green w-100">
+                            <i class="fas fa-check me-2"></i>Start Session
+                        </button>
                     </form>
                 </div>
-                <div class="modal-footer border-neon-blue">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-neon-green" id="startSessionBtn">Start Session</button>
-                </div>
             </div>
         </div>
     </div>
-
-    <!-- Active Sessions Modal -->
-    <div class="modal fade" id="sessionDetailsModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content dark-modal">
-                <div class="modal-header border-neon-green">
-                    <h5 class="modal-title"><i class="fas fa-clock me-2 text-neon-green"></i>Active Session</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="session-details" id="sessionDetails">
-                        <!-- Populated by JS -->
-                    </div>
-                </div>
-                <div class="modal-footer border-neon-green">
-                    <button type="button" class="btn btn-warning" id="extendBtn"><i class="fas fa-plus me-1"></i>Extend +30 min</button>
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-danger" id="endSessionBtn"><i class="fas fa-stop-circle me-1"></i>End Session</button>
-                        <button type="button" class="btn btn-success" id="paymentCompleteBtn"><i class="fas fa-check-circle me-1"></i>Payment Completed</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Devices Grid -->
-    <div class="row" id="devicesContainer">
-        <!-- Populated by JavaScript -->
-    </div>
 </div>
 
-<!-- Alert Notification -->
-<div id="alertToast" class="position-fixed bottom-0 end-0 m-3" role="alert" style="display:none; z-index: 1050;">
-    <div class="alert alert-warning alert-dismissible fade show m-0" role="alert">
-        <i class="fas fa-exclamation-triangle me-2"></i>
-        <strong id="alertMessage">Session expiring soon!</strong>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
 <script>
-let currentSessionId = null;
-const DEVICES_RATE = {
-    'PS5': 100,
-    'Gaming PC': 120,
-    'Driving Console': 150
-};
+const API_BASE = '/api';
+let devices = [];
+let members = [];
 
-// Load devices on page load
-window.addEventListener('load', function() {
-    loadMembers();
-    loadDevices();
-    loadActiveSessions();
-    // Refresh every 5 seconds
-    setInterval(loadActiveSessions, 5000);
-});
-
+// Load initial data
 function loadMembers() {
-    fetch('/api/members')
+    fetch(`${API_BASE}/members`)
         .then(r => r.json())
         .then(data => {
+            members = data;
             const select = document.getElementById('memberSelect');
             select.innerHTML = '<option value="">-- Select Registered Member --</option>';
-            data.data.forEach(member => {
-                const option = document.createElement('option');
-                option.value = member.id;
-                option.textContent = `${member.name} (${member.mobile})`;
-                select.appendChild(option);
+            members.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = `${m.name} (${m.mobile})`;
+                select.appendChild(opt);
             });
-        });
+        })
+        .catch(e => console.error('Error loading members:', e));
 }
 
-function loadDevices() {
-    fetch('/api/devices')
+function loadAvailableDevices() {
+    fetch(`${API_BASE}/devices/available`)
         .then(r => r.json())
         .then(data => {
-            const container = document.getElementById('devicesContainer');
-            container.innerHTML = '';
-            
-            data.data.forEach(device => {
-                const card = createDeviceCard(device);
-                container.appendChild(card);
-            });
-            
-            // Populate device select
+            devices = data;
             const select = document.getElementById('deviceSelect');
             select.innerHTML = '<option value="">Select a device...</option>';
-            data.data.forEach(device => {
-                if (device.status === 'Available') {
-                    const option = document.createElement('option');
-                    option.value = device.id;
-                    option.textContent = `${device.device_type} #${device.device_number}`;
-                    select.appendChild(option);
-                }
+            devices.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.textContent = `${d.device_type} #${d.device_number}`;
+                select.appendChild(opt);
             });
-        });
+        })
+        .catch(e => console.error('Error loading devices:', e));
 }
 
-function createDeviceCard(device) {
-    const col = document.createElement('div');
-    col.className = 'col-md-4 mb-4';
-    
-    const statusClass = device.status === 'Available' ? 'status-available' : 'status-occupied';
-    const statusIcon = device.status === 'Available' ? 'check-circle' : 'play-circle';
-    const statusColor = device.status === 'Available' ? 'text-neon-green' : 'text-warning';
-    
-    col.innerHTML = `
-        <div class="device-card ${statusClass}">
-            <div class="card-header">
-                <h5>${device.device_type} <span class="badge badge-${device.device_type.toLowerCase()}">#${device.device_number}</span></h5>
-            </div>
-            <div class="card-body">
-                <p class="mb-2"><i class="fas fa-${statusIcon} ${statusColor} me-2"></i><strong>${device.status}</strong></p>
-                <p class="mb-2">Rate: <span class="text-neon-green">₹${device.rate_per_hour}/hr</span></p>
-                ${device.member_name ? `<p class="mb-2">User: <strong>${device.member_name}</strong></p>` : ''}
-                ${device.status === 'Available' ? `
-                    <button class="btn btn-neon-green btn-sm w-100" onclick="selectDevice(${device.id})">
-                        <i class="fas fa-play-circle me-1"></i>Start Session
-                    </button>
-                ` : `
-                    <button class="btn btn-neon-blue btn-sm w-100" onclick="viewSession(${device.id})">
-                        <i class="fas fa-eye me-1"></i>View Details
-                    </button>
-                `}
-            </div>
-        </div>
-    `;
-    
-    return col;
-}
-
-function selectDevice(deviceId) {
-    document.getElementById('deviceSelect').value = deviceId;
-    document.getElementById('memberSelect').focus();
-    new bootstrap.Modal(document.getElementById('startSessionModal')).show();
-}
-
-// Calculate bill
-document.getElementById('deviceSelect').addEventListener('change', calculateBill);
-document.querySelectorAll('input[name="duration"]').forEach(radio => {
-    radio.addEventListener('change', calculateBill);
-});
-
-function calculateBill() {
-    const deviceId = document.getElementById('deviceSelect').value;
-    if (!deviceId) return;
-    
-    fetch(`/api/devices/${deviceId}`)
+function loadAllDevices() {
+    fetch(`${API_BASE}/devices`)
         .then(r => r.json())
         .then(data => {
-            const minutes = parseInt(document.querySelector('input[name="duration"]:checked').value);
-            const rate = data.data.rate_per_hour;
-            const bill = (minutes / 60) * rate;
-            document.getElementById('billAmount').textContent = '₹' + bill.toFixed(2);
-        });
+            const grid = document.getElementById('deviceGrid');
+            grid.innerHTML = '';
+            
+            const grouped = {};
+            data.forEach(d => {
+                if (!grouped[d.device_type]) grouped[d.device_type] = [];
+                grouped[d.device_type].push(d);
+            });
+            
+            Object.entries(grouped).forEach(([type, devs]) => {
+                devs.forEach(d => {
+                    const statusClass = `status-${d.status.toLowerCase()}`;
+                    const card = document.createElement('div');
+                    card.className = 'col-md-4 col-lg-3';
+                    card.innerHTML = `
+                        <div class="card dark-card border-neon-blue h-100">
+                            <div class="card-body">
+                                <h6 class="card-title text-neon-blue">${type} #${d.device_number}</h6>
+                                <p class="text-muted mb-2">Rate: ₹${d.rate_per_hour}/hr</p>
+                                <div class="text-center">
+                                    <span class="status-badge ${statusClass}">${d.status}</span>
+                                </div>
+                                ${d.status === 'Occupied' ? `<p class="text-warning small mt-2">Member ID: ${d.current_member_id}</p>` : ''}
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            });
+        })
+        .catch(e => console.error('Error loading devices:', e));
 }
 
-// Start session
-document.getElementById('startSessionBtn').addEventListener('click', function() {
+function loadActiveSessions() {
+    fetch(`${API_BASE}/sessions/active`)
+        .then(r => r.json())
+        .then(data => {
+            const container = document.getElementById('activeSessions');
+            container.innerHTML = '';
+            
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div class="alert alert-info text-center py-4"><i class="fas fa-info-circle me-2"></i> No active sessions. Start one to begin!</div>';
+                return;
+            }
+            
+            data.forEach(session => {
+                const remaining = session.remaining_minutes;
+                const elapsed = session.elapsed_minutes;
+                const total = session.duration_minutes;
+                const progress = ((elapsed / total) * 100) || 0;
+                
+                const card = document.createElement('div');
+                card.className = 'session-card';
+                card.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="text-neon-blue">${session.member_name}</h5>
+                            <p class="mb-1"><strong>Device:</strong> ${session.device_type} #${session.device_number}</p>
+                            <p class="mb-1"><strong>Started:</strong> ${new Date(session.start_time).toLocaleTimeString()}</p>
+                            <p class="mb-2"><strong>Bill:</strong> <span class="text-neon-green">₹${session.total_amount.toFixed(2)}</span></p>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <div class="timer-display">${String(remaining).padStart(2, '0')}:00</div>
+                            <small class="text-muted">Remaining</small>
+                        </div>
+                    </div>
+                    <div class="progress my-2" style="height: 8px;">
+                        <div class="progress-bar progress-bar-animated" style="width: ${progress}%"></div>
+                    </div>
+                    <div class="btn-group w-100 mt-3" role="group">
+                        <button class="btn btn-sm btn-outline-neon-blue btn-action" onclick="extendSession(${session.id})">
+                            <i class="fas fa-plus-circle me-1"></i>Extend +30min
+                        </button>
+                        <button class="btn btn-sm btn-outline-neon-green btn-action" onclick="endSession(${session.id})">
+                            <i class="fas fa-stop-circle me-1"></i>End Session
+                        </button>
+                        <button class="btn btn-sm btn-outline-neon-green btn-action" onclick="completePayment(${session.id})" style="background: #00ff41; color: #000; border: none;">
+                            <i class="fas fa-check-circle me-1"></i>Payment Done
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        })
+        .catch(e => console.error('Error loading sessions:', e));
+}
+
+function extendSession(sessionId) {
+    if (!confirm('Extend session by 30 minutes?')) return;
+    
+    fetch(`${API_BASE}/sessions/${sessionId}/extend`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({extend_minutes: 30})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('Session extended successfully!');
+            loadActiveSessions();
+            loadAllDevices();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(e => alert('Error extending session: ' + e));
+}
+
+function endSession(sessionId) {
+    const status = prompt('Payment Status (Completed/Partial/Pending)?', 'Completed');
+    if (!status) return;
+    
+    fetch(`${API_BASE}/sessions/${sessionId}/end`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({payment_status: status})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('Session ended: ' + data.message);
+            loadActiveSessions();
+            loadAllDevices();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(e => alert('Error ending session: ' + e));
+}
+
+function completePayment(sessionId) {
+    if (!confirm('Mark payment as completed and free the device?')) return;
+    
+    fetch(`${API_BASE}/sessions/${sessionId}/complete-payment`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('✓ ' + data.message);
+            loadActiveSessions();
+            loadAllDevices();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(e => alert('Error: ' + e));
+}
+
+// Form submission
+document.getElementById('sessionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
     const memberId = document.getElementById('memberSelect').value;
     const deviceId = document.getElementById('deviceSelect').value;
     const duration = document.querySelector('input[name="duration"]:checked').value;
     
-    if (!memberId) {
-        alert('Please select a registered member');
+    if (!memberId || !deviceId || !duration) {
+        alert('Please fill all fields');
         return;
     }
     
-    if (!deviceId) {
-        alert('Please select a device');
-        return;
-    }
-    
-    // Get member name from select
-    const memberSelect = document.getElementById('memberSelect');
-    const memberName = memberSelect.options[memberSelect.selectedIndex].text.split('(')[0].trim();
-    
-    fetch('/api/sessions/start', {
+    fetch(`${API_BASE}/sessions/start`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
-            device_id: parseInt(deviceId),
             member_id: parseInt(memberId),
-            member_name: memberName,
-            duration_minutes: parseInt(duration)
+            device_id: parseInt(deviceId),
+            duration: duration
         })
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            alert('Session started successfully!');
-            document.getElementById('sessionForm').reset();
+            alert('✓ Session started!');
             bootstrap.Modal.getInstance(document.getElementById('startSessionModal')).hide();
-            loadDevices();
+            document.getElementById('sessionForm').reset();
             loadActiveSessions();
+            loadAllDevices();
         } else {
             alert('Error: ' + data.error);
+        }
+    })
+    .catch(e => alert('Error starting session: ' + e));
+});
+
+// Calculate bill on duration change
+document.querySelectorAll('input[name="duration"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const duration = parseInt(this.value);
+        const deviceId = document.getElementById('deviceSelect').value;
+        if (deviceId) {
+            const device = devices.find(d => d.id == deviceId);
+            if (device) {
+                const bill = (duration / 60) * device.rate_per_hour;
+                document.getElementById('billAmount').textContent = '₹' + bill.toFixed(2);
+            }
         }
     });
 });
 
-function loadActiveSessions() {
-    fetch('/api/sessions/active')
-        .then(r => r.json())
-        .then(data => {
-            data.data.forEach(session => {
-                if (session.alert_5min) {
-                    showAlert(`${session.device_type} #${session.device_number}: ${session.remaining_minutes} minutes remaining!`);
-                }
-            });
-        });
-}
-
-function viewSession(deviceId) {
-    fetch('/api/sessions/active')
-        .then(r => r.json())
-        .then(data => {
-            const session = data.data.find(s => s.device_id === deviceId);
-            if (session) {
-                currentSessionId = session.id;
-                const details = `
-                    <div class="session-info">
-                        <div class="row mb-3">
-                            <div class="col-6"><strong>Member:</strong></div>
-                            <div class="col-6">${session.member_name}</div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-6"><strong>Device:</strong></div>
-                            <div class="col-6">${session.device_type} #${session.device_number}</div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-6"><strong>Elapsed Time:</strong></div>
-                            <div class="col-6 text-neon-green">${session.elapsed_minutes} minutes</div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-6"><strong>Remaining Time:</strong></div>
-                            <div class="col-6 text-warning">${session.remaining_minutes} minutes</div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-6"><strong>Total Bill:</strong></div>
-                            <div class="col-6 text-neon-green"><h4>₹${session.total_amount.toFixed(2)}</h4></div>
-                        </div>
-                        <div class="alert alert-info mt-3">
-                            <strong>Session Status:</strong> ${session.payment_status}
-                        </div>
-                    </div>
-                `;
-                document.getElementById('sessionDetails').innerHTML = details;
-                
-                document.getElementById('extendBtn').onclick = () => extendSession(session.id);
-                document.getElementById('endSessionBtn').onclick = () => endSession(session.id);
-                document.getElementById('paymentCompleteBtn').onclick = () => completePayment(session.id);
-                
-                new bootstrap.Modal(document.getElementById('sessionDetailsModal')).show();
-            }
-        });
-}
-
-function extendSession(sessionId) {
-    fetch(`/api/sessions/${sessionId}/extend`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({extra_minutes: 30})
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            alert('Session extended by 30 minutes!');
-            bootstrap.Modal.getInstance(document.getElementById('sessionDetailsModal')).hide();
-            loadDevices();
-            loadActiveSessions();
+document.getElementById('deviceSelect').addEventListener('change', function() {
+    const duration = parseInt(document.querySelector('input[name="duration"]:checked').value);
+    const deviceId = this.value;
+    if (deviceId) {
+        const device = devices.find(d => d.id == deviceId);
+        if (device) {
+            const bill = (duration / 60) * device.rate_per_hour;
+            document.getElementById('billAmount').textContent = '₹' + bill.toFixed(2);
         }
-    });
-}
-
-function endSession(sessionId) {
-    if (confirm('Mark session as ended?')) {
-        fetch(`/api/sessions/${sessionId}/end`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({payment_status: 'Pending'})
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                alert('Session ended. Waiting for payment...');
-                bootstrap.Modal.getInstance(document.getElementById('sessionDetailsModal')).hide();
-                loadDevices();
-                loadActiveSessions();
-            }
-        });
     }
-}
+});
 
-function completePayment(sessionId) {
-    if (confirm('Confirm payment received?')) {
-        fetch(`/api/sessions/${sessionId}/end`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({payment_status: 'Completed'})
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                alert('✓ Payment completed successfully!');
-                showNotification('Payment completed and added to reports', 'success');
-                bootstrap.Modal.getInstance(document.getElementById('sessionDetailsModal')).hide();
-                loadDevices();
-                loadActiveSessions();
-            }
-        });
-    }
-}
+// Initial load
+loadMembers();
+loadAvailableDevices();
+loadAllDevices();
+loadActiveSessions();
 
-function showAlert(message) {
-    const toast = document.getElementById('alertToast');
-    document.getElementById('alertMessage').textContent = message;
-    toast.style.display = 'block';
-    playAlertSound();
-    setTimeout(() => { toast.style.display = 'none'; }, 5000);
-}
-
-function showNotification(message, type = 'info') {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-    alertDiv.style.cssText = 'bottom: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    alertDiv.innerHTML = `
-        <strong>${message}</strong>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    document.body.appendChild(alertDiv);
-    setTimeout(() => alertDiv.remove(), 3000);
-}
-
-function playAlertSound() {
-    const audio = document.getElementById('alertSound');
-    audio.play().catch(() => {});
-}
+// Refresh every 5 seconds
+setInterval(() => {
+    loadActiveSessions();
+    loadAllDevices();
+}, 5000);
 </script>
 {% endblock %}
